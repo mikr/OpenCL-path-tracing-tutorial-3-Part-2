@@ -1,7 +1,11 @@
 #pragma once
 
-#include <GL\glew.h>
-#include <GL\glut.h>
+#include <GL/glew.h>
+#if defined(__APPLE__)
+#include <GLUT/glut.h>
+#else
+#include <GL/glut.h>
+#endif // !__APPLE__
 #include "camera.h"
 
 bool buffer_reset;

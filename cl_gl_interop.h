@@ -1,8 +1,12 @@
 #pragma once
 
-#include <GL\glew.h>
-#include <GL\glut.h>
-#include <CL\cl.hpp>
+#include <GL/glew.h>
+#if defined(__APPLE__)
+#include <GLUT/glut.h>
+#else
+#include <GL/glut.h>
+#endif
+#include <CL/cl.hpp>
 #include "user_interaction.h"
 
 //#define GL_SHARING_EXTENSION "cl_khr_gl_sharing"   // OpenCL-OpenGL interoperability extension

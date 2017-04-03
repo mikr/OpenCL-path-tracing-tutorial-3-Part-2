@@ -2,7 +2,9 @@
 
 #include "linear_algebra.h"
 
-#define M_PI 3.14156265
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327950288
+#endif
 #define PI_OVER_TWO 1.5707963267948966192313216916397514420985
 
 // Camera struct, used to store interactive camera data, copied to the GPU and used by OpenCL for each frame

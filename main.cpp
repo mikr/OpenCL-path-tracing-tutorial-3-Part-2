@@ -5,11 +5,16 @@
 #include <fstream>
 #include <vector>
 #include "cl_gl_interop.h"
-#include <CL\cl.hpp>
+#include <CL/cl.hpp>
 #include "linear_algebra.h"
 #include "camera.h"
 #include "geometry.h"
 #include "user_interaction.h"
+#if defined(__APPLE__)
+#include <OpenGL/OpenGL.h>
+#elif defined(__linux__)
+#include <GL/glx.h>
+#endif
 
 // TODO
 // cleanup()
@@ -41,6 +46,13 @@ unsigned int framenumber = 0;
 
 Camera* hostRendercam = NULL;
 Sphere cpu_spheres[sphere_count];
+
+void wait_for_key()
+{
+#if defined(_WIN32)
+	system("PAUSE");
+#endif
+}
 
 void pickPlatform(Platform& platform, const vector<Platform>& platforms){
 
@@ -88,9 +100,9 @@ void printErrorLog(const Program& program, const Device& device){
 
 	// Print the error log to a file
 	FILE *log = fopen("errorlog.txt", "w");
-	fprintf(log, "%s\n", buildlog);
+	fprintf(log, "%s\n", buildlog.c_str());
 	cout << "Error log saved in 'errorlog.txt'" << endl;
-	system("PAUSE");
+	wait_for_key();
 	exit(1);
 }
 
@@ -127,7 +139,9 @@ void initOpenCL()
 	cout << "\t\t\tMax work group size: " << device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>() << endl;
 
 	// Create an OpenCL context on that device.
-	// Windows specific OpenCL-OpenGL interop
+
+#if defined(_WIN32)
+    // Windows
 	cl_context_properties properties[] =
 	{
 		CL_GL_CONTEXT_KHR, (cl_context_properties)wglGetCurrentContext(),
@@ -135,6 +149,26 @@ void initOpenCL()
 		CL_CONTEXT_PLATFORM, (cl_context_properties)platform(),
 		0
 	};
+#elif defined(__APPLE__)
+    // OS X
+    CGLContextObj kCGLContext = CGLGetCurrentContext();
+    CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
+    cl_context_properties properties[] =
+    {
+    	CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
+    	(cl_context_properties)kCGLShareGroup,
+    	0
+    };
+#else
+    // Linux
+    cl_context_properties properties[] =
+    {
+    	CL_GL_CONTEXT_KHR, (cl_context_properties)glXGetCurrentContext(),
+    	CL_GLX_DISPLAY_KHR, (cl_context_properties)glXGetCurrentDisplay(),
+    	CL_CONTEXT_PLATFORM, (cl_context_properties)platform(),
+    	0
+    };
+#endif
 
 	context = Context(device, properties);
 
@@ -147,7 +181,7 @@ void initOpenCL()
 	ifstream file("opencl_kernel.cl");
 	if (!file){
 		cout << "\nNo OpenCL file found!" << endl << "Exiting..." << endl;
-		system("PAUSE");
+		wait_for_key();
 		exit(1);
 	}
 	while (!file.eof()){
@@ -304,7 +338,7 @@ void initCamera()
 	interactiveCamera->setFOVX(45);
 }
 
-void main(int argc, char** argv){
+int main(int argc, char** argv){
 
 	// initialise OpenGL (GLEW and GLUT window + callback functions)
 	initGL(argc, argv);
@@ -367,5 +401,5 @@ void main(int argc, char** argv){
 	// release memory
 	cleanUp();
 
-	system("PAUSE");
+	wait_for_key();
 }
